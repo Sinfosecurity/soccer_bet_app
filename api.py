@@ -25,14 +25,13 @@ class MatchData(BaseModel):
 def predict_match(data: MatchData):
     try:
         df = pd.DataFrame([data.dict()])
-        print("🔹 Received Data:", df.columns)  # Debugging print
-        print("🔹 Model Expected Features:", model.feature_names_in_)  # Debugging print
-
-        # Ensure feature names match
-        df = df[model.feature_names_in_]
-
         prediction = model.predict(df)[0]
-        return {"prediction": int(prediction)}
+
+        # Mapping numeric predictions to actual outcomes
+        outcome_mapping = {0: "Loss", 1: "Win", 2: "Draw"}
+        predicted_outcome = outcome_mapping.get(int(prediction), "Unknown")
+
+        return {"prediction": predicted_outcome}
     except Exception as e:
         return {"error": str(e)}
 
