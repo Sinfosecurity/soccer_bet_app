@@ -44,6 +44,9 @@ def get_all_soccer_matches():
             data = response.json()
             if isinstance(data, list):  # ✅ Ensure it's a list
                 matches.extend(data)
+                print(f"✅ Fetched {len(data)} matches from {league}")  # 🔹 Debugging log
+            else:
+                print(f"🔴 Unexpected API response format for {league}: {data}")  # 🔹 Debugging log
         except Exception as e:
             print(f"🔴 Error Fetching {league}: {e}")
     return matches
@@ -71,19 +74,24 @@ def predict_matches(data: MatchData):
                 away_team = match["away_team"]
 
                 # ✅ Extract odds properly as numbers
-                odds = {"home_win": 0, "draw": 0, "away_win": 0}
+                odds = {"home_win": None, "draw": None, "away_win": None}
                 if "bookmakers" in match:
                     for bookmaker in match["bookmakers"]:
                         for market in bookmaker["markets"]:
                             if market["key"] == "h2h":
                                 try:
-                                    odds["home_win"] = float(market["outcomes"][0].get("price", 0))
-                                    odds["away_win"] = float(market["outcomes"][1].get("price", 0))
-                                    if len(market["outcomes"]) > 2:
-                                        odds["draw"] = float(market["outcomes"][2].get("price", 0))
+                                    outcomes = market.get("outcomes", [])
+                                    if len(outcomes) >= 2:
+                                        odds["home_win"] = float(outcomes[0].get("price", 0))
+                                        odds["away_win"] = float(outcomes[1].get("price", 0))
+                                        if len(outcomes) > 2:
+                                            odds["draw"] = float(outcomes[2].get("price", 0))
+                                        print(f"✅ Extracted Odds for {home_team} vs {away_team}: {odds}")  # 🔹 Debugging log
+                                    else:
+                                        print(f"🔴 Missing odds data for {home_team} vs {away_team}")  # 🔹 Debugging log
                                     break  # ✅ Stop once we get odds
-                                except (IndexError, ValueError):
-                                    print(f"🔴 Error extracting odds for {home_team} vs {away_team}")
+                                except (IndexError, ValueError) as e:
+                                    print(f"🔴 Error extracting odds for {home_team} vs {away_team}: {e}")
 
                 # ✅ Generate a confidence level between 75% and 90%
                 confidence = round(random.uniform(75, 90), 2)
